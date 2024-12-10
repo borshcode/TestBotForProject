@@ -1,11 +1,12 @@
 from aiogram import Bot, Dispatcher, F
 # from aiogram.client.default import DefaultBotProperties
 from aiogram.filters import Command
-from aiogram.types import Message
+from aiogram.types import Message, FSInputFile
 import logging
 
 import asyncio
 
+from db import Json
 import config as cfg
 import keyboards as kbs
 
@@ -36,7 +37,10 @@ async def start_handler(msg: Message):
 # обработчики нажатий на кнопку
 @dp.message(F.text == '🧮АЛГЕБРА🧮')
 async def algebra_handler(msg: Message):
-    pass
+    formuls.load()
+    path = formuls.content['Алгебра']['Формулы сокращенного умножения']['Квадрат суммы']
+    print(path)
+    await msg.answer_photo(FSInputFile(path))
 
 
 @dp.message(F.text == '📏ГЕОМЕТРИЯ📏')
@@ -46,5 +50,8 @@ async def geometry_handler(msg: Message):
 
 
 if __name__ == '__main__':
+    formuls = Json('formuls.json')
+    formuls.load()
+    print(formuls.content)
     logging.basicConfig(level=logging.INFO)
     asyncio.run(main())
