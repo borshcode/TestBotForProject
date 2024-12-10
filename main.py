@@ -7,6 +7,7 @@ import logging
 import asyncio
 
 from db import Json
+from downloadPhoto import download_photo
 import config as cfg
 import keyboards as kbs
 
@@ -50,6 +51,7 @@ async def geometry_handler(msg: Message):
 
 
 if __name__ == '__main__':
+    download_photo()
     formuls = Json('formuls.json')
     formuls.load()
     print(formuls.content)
