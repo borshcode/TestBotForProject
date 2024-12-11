@@ -3,17 +3,14 @@ import os
 
 from db import Json
 
-formuls = Json('./formuls.json')
-formuls.load()
-global_data = formuls.content
+links = Json('./formuls.json')
+links.load()
+global_data = links.content
+
 HEADERS = {
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36 Edg/131.0.0.0'
 }
-
-def get_photo(url: str):
-    if not os.path.exists('./Img/'):
-        os.mkdir('./Img/')
-    os.chdir('./Img/')
+def get_name(url: str) -> str:
     index = len(url) - 1
     name = ''
     while True:
@@ -23,14 +20,20 @@ def get_photo(url: str):
         else:
             break
         index -= 1
-    name = ''.join(reversed(name))
+    return ''.join(reversed(name))
+
+
+def get_photo(url: str):
+    if not os.path.exists('./Img/'):
+        os.mkdir('./Img/')
+    os.chdir('./Img/')
+    name = get_name(url)
 
     if not os.path.exists(os.path.join(os.getcwd(), name)):
         response = requests.get(url, headers=HEADERS)
         if response.status_code == 200:
             with open(name, 'wb') as img:
                 img.write(response.content)
-                print('File added!')
     os.chdir('../')
 
     

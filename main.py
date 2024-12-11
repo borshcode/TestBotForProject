@@ -5,9 +5,10 @@ from aiogram.types import Message, FSInputFile
 import logging
 
 import asyncio
+import os
 
 from db import Json
-from downloadPhoto import download_photo
+from downloadPhoto import download_photo, get_name
 import config as cfg
 import keyboards as kbs
 
@@ -39,9 +40,10 @@ async def start_handler(msg: Message):
 @dp.message(F.text == '🧮АЛГЕБРА🧮')
 async def algebra_handler(msg: Message):
     formuls.load()
-    path = formuls.content['Алгебра']['Формулы сокращенного умножения']['Квадрат суммы']
-    print(path)
+    os.chdir('./Img/')
+    path = get_name(formuls.content['Алгебра']['Формулы сокращенного умножения']['Квадрат суммы'])
     await msg.answer_photo(FSInputFile(path))
+    os.chdir('../')
 
 
 @dp.message(F.text == '📏ГЕОМЕТРИЯ📏')
@@ -51,7 +53,9 @@ async def geometry_handler(msg: Message):
 
 
 if __name__ == '__main__':
-    download_photo()
+    # os.chdir('./Img/')
+    # download_photo()
+    # os.chdir('../')
     formuls = Json('formuls.json')
     formuls.load()
     print(formuls.content)
