@@ -57,3 +57,4 @@ def download_photo():
 
     for url in urls:
         get_photo(url)
+        
