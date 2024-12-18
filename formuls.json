@@ -1,13 +1,13 @@
 {
     "🧮АЛГЕБРА🧮": {
         "Формулы сокращенного умножения": {
-            "Квадрат суммы": "https://educon.by/images/formuly/allmath/1.png",
-            "Квадрат разности": "https://educon.by/images/formuly/allmath/2.png",
-            "Разность квадратов": "https://educon.by/images/formuly/allmath/3.png",
-            "Разность кубов": "https://educon.by/images/formuly/allmath/4.png",
-            "Сумма кубов": "https://educon.by/images/formuly/allmath/5.png",
-            "Куб суммы": "https://educon.by/images/formuly/allmath/6.png",
-            "Куб разности": "https://educon.by/images/formuly/allmath/7.png"
+            "Квадрат суммы": ["https://educon.by/images/formuly/allmath/1.png", "Квдрат суммы равен сумме квадрата первого члена с удвоенным произведением первого члена на второй"],
+            "Квадрат разности": ["https://educon.by/images/formuly/allmath/2.png", "Описание"],
+            "Разность квадратов": ["https://educon.by/images/formuly/allmath/3.png", "Описание"],
+            "Разность кубов": ["https://educon.by/images/formuly/allmath/4.png", "Описание"],
+            "Сумма кубов": ["https://educon.by/images/formuly/allmath/5.png", "Описание"],
+            "Куб суммы": ["https://educon.by/images/formuly/allmath/6.png", "Описание"],
+            "Куб разности": ["https://educon.by/images/formuly/allmath/7.png", "Описание"]
         }
     }
 }

@@ -42,6 +42,7 @@ def download_photo():
     links = Json('./formuls.json')
     links.load()
     global_data = links.content
+    data = global_data
 
     for dic in list(data.values()):
         value = list(data.values())
@@ -54,7 +55,7 @@ def download_photo():
                     break
             break
         for i in value:
-            urls.append(i)
+            urls.append(i[0])
         data = global_data
 
     for url in urls:
