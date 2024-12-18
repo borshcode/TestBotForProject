@@ -3,9 +3,9 @@ import os
 
 from db import Json
 
-links = Json('./formuls.json')
-links.load()
-global_data = links.content
+# links = Json('./formuls.json')
+# links.load()
+# global_data = links.content
 
 HEADERS = {
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36 Edg/131.0.0.0'
@@ -39,7 +39,9 @@ def get_photo(url: str):
     
 def download_photo():
     urls = []
-    data = global_data
+    links = Json('./formuls.json')
+    links.load()
+    global_data = links.content
 
     for dic in list(data.values()):
         value = list(data.values())

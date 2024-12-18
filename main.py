@@ -14,20 +14,19 @@ import keyboards as kbs
 
 
 # default=DefaultBotProperties(parse_mode='HTML')
-bot = Bot(cfg.TOKEN)
-dp = Dispatcher()
+bot = Bot(cfg.TOKEN) # создание экземпляра бота
+dp = Dispatcher() # создание экзепляра диспетчера
 
 
 async def main(): # запуск бота
     await bot.delete_webhook(drop_pending_updates=True) # игнор команд, которые были даны в отключке
-    await dp.start_polling(bot)
+    await dp.start_polling(bot) # запуск бота
 
 
 # обработка команды /start
 @dp.message(Command('start'))
 async def start_handler(msg: Message, first: bool = True):
-    formuls.load()
-    if first:
+    if first: # проверка на команду start
         await msg.answer(
 f'''
 Привет, {msg.from_user.first_name}!
@@ -46,35 +45,35 @@ f'''
 # обработчики нажатий на кнопки
 @dp.message(F.text == 'На главное меню')
 async def go_to_start_handler(msg: Message):
-    await start_handler(msg, False)
+    await start_handler(msg, False) # возврат главному меню
 
 
 @dp.message()
 async def show_formul_handler(msg: Message):
     keys = list(formuls.content.keys())
-    keyboard = None
+    keyboard = None # сюда запишем клавиатуру
     for key in keys: # заходим в выбор предметов
         if msg.text in keys:
-            keyboard = kbs.get_keyboard(formuls.content[msg.text])
+            keyboard = kbs.get_keyboard(formuls.content[msg.text]) # получаем клавиатуру категорий
             break
         keys1 = list(formuls.content[key].keys())
         for key1 in keys1: # заходим в выбор категории
             if msg.text in keys1:
-                keyboard = kbs.get_keyboard(formuls.content[key][msg.text])
+                keyboard = kbs.get_keyboard(formuls.content[key][msg.text]) # получаем клавиатуру формул
                 break
             keys2 = list(formuls.content[key][key1].keys())
             if msg.text in keys2:
                 os.chdir('./Img/')
-                await msg.answer_photo(FSInputFile(get_name(formuls.content[key][key1][msg.text])))
+                await msg.answer_photo(FSInputFile(get_name(formuls.content[key][key1][msg.text]))) # отправка формулы
                 os.chdir('../')
                 return
             
-    await msg.answer('Выберите:', reply_markup=keyboard)
+    await msg.answer('Выберите:', reply_markup=keyboard) # отправка клавиатуры
 
 
 if __name__ == '__main__':
     download_photo()
-    formuls = Json('formuls.json')
-    formuls.load()
-    logging.basicConfig(level=logging.INFO)
+    formuls = Json('formuls.json') # созданиме экземпляра класса Json
+    formuls.load() # загрузка Json-файла
+    logging.basicConfig(level=logging.INFO) # запуск логирования
     asyncio.run(main())
