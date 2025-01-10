@@ -64,8 +64,10 @@ async def show_formul_handler(msg: Message):
             keys2 = list(formuls.content[key][key1].keys())
             if msg.text in keys2:
                 os.chdir('./Img/')
-                if formuls.content[key][key1][msg.text][1] != '':
-                    await msg.answer(formuls.content[key][key1][msg.text][1])
+                try: # игнор ошибки
+                    await msg.answer(formuls.content[key][key1][msg.text][1]) # отправка описания
+                except IndexError:
+                    pass
                 await msg.answer_photo(FSInputFile(get_name(formuls.content[key][key1][msg.text][0]))) # отправка формулы
                 os.chdir('../')
                 return
