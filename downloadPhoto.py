@@ -1,7 +1,7 @@
 import requests
 import os
 
-from db import Json
+from myJson import Json
 
 # links = Json('./formuls.json')
 # links.load()
