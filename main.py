@@ -20,8 +20,15 @@ cursor = db.cursor()
 
 cursor.execute("""CREATE TABLE IF NOT EXISTS users (
     id INT,
-    is_admin BOOL,
     is_banned BOOL
+)""")
+cursor.execute("""CREATE TABLE IF NOT EXISTS admins (
+    id INT,
+    nickname TEXT,
+    password TEXT,
+    in_admin BOOL,
+    input_passwd BOOL,
+    login BOOL
 )""")
 db.commit()
 
@@ -32,21 +39,21 @@ bot = Bot(cfg.TOKEN) # создание экземпляра бота
 dp = Dispatcher() # создание экзепляра диспетчера
 
 
-async def main(): # запуск бота
+#? запуск бота
+async def main():
     # игнор команд, которые были даны в отключке
     await bot.delete_webhook(drop_pending_updates=True)
     await dp.start_polling(bot) # запуск бота
 
 
-# обработка команды /start
+#? обработка команды /start
 @dp.message(Command('start'))
 async def start_handler(msg: Message, first: bool = True):
-    # print(msg.from_user.id) #TODO: отладка, при релизе убрать
+    # print(msg.from_user.username) #TODO: отладка, при релизе убрать
     cursor.execute("SELECT * FROM users WHERE id = ?", (msg.from_user.id,))
     if cursor.fetchone() == None:
-        cursor.execute("INSERT INTO users VALUES (?, ?, ?)", (
+        cursor.execute("INSERT INTO users VALUES (?, ?)", (
             msg.from_user.id,
-            False,
             False
             ))
         db.commit()
@@ -75,12 +82,29 @@ async def go_to_start_handler(msg: Message):
     await start_handler(msg, False) # возврат главному меню
 
 
-#TODO: добавить админ-панель
+#? админ-панель
+@dp.message(Command('admin'))
+async def admin_handler(msg: Message):
+    cursor.execute("SELECT * FROM admins WHERE id = ?", (msg.from_user.id,))
+    admin = cursor.fetchone()
+    if admin == None:
+        await msg.answer('Неизвестная команда!')
+        return
+    if admin[2] == '':
+        await msg.answer(f'Добро пожаловать, {msg.from_user.first_name}!\n\
+Придумайте пароль для входа в админ-панель:')
+        cursor.execute(
+            "UPDATE admins SET input_passwd = ? WHERE id = ?",
+            (True, msg.from_user.id)
+        )
+        db.commit()
 
 
 @dp.message()
 async def show_formul_handler(msg: Message):
-    #TODO: сделать игнор неизвестных
+    if msg.text[0] == '/':
+        await msg.answer('Неизвестная команда!')
+        return
     keys = list(formuls.content.keys())
     keyboard = None # сюда запишем клавиатуру
     for key in keys: # заходим в выбор предметов
@@ -102,13 +126,35 @@ async def show_formul_handler(msg: Message):
                     await msg.answer(formuls.content[key][key1][msg.text][1])
                 except IndexError:
                     pass
+                # отправка формулы
                 await msg.answer_photo(FSInputFile(get_name(
                                     formuls.content[key][key1][msg.text][0]
-                                    ))) # отправка формулы
+                                    )))
                 os.chdir('../')
                 return
-            
-    await msg.answer('Выберите:', reply_markup=keyboard) # отправка клавиатуры
+    
+    if keyboard != None:
+        # отправка клавиатуры
+        await msg.answer('Выберите:', reply_markup=keyboard)
+    else:
+        cursor.execute("SELECT input_passwd FROM admins WHERE id = ?",
+                        (msg.from_user.id,)
+                        )
+        admin = cursor.fetchone()
+        if admin != None:
+            if admin[0]:
+                cursor.execute(
+                    "UPDATE admins SET password = ? WHERE id = ?",
+                    (msg.text, msg.from_user.id)
+                )
+                cursor.execute(
+                    "UPDATE admins SET input_passwd = ? WHERE id = ?",
+                    (False, msg.from_user.id)
+                )
+                db.commit()
+                await msg.answer('Пароль успешно обновлен! Для \
+входа в админ-панель используйте команду \
+/admin')
 
 
 #? вход в программу
