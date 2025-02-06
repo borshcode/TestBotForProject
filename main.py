@@ -30,6 +30,13 @@ cursor.execute("""CREATE TABLE IF NOT EXISTS admins (
     input_passwd BOOL,
     login BOOL
 )""")
+cursor.execute("""CREATE TABLE IF NOT EXISTS formuls (
+    id INT AUTOINCREMENT PRIMARY KEY,
+    subject TEXT,
+    category TEXT,
+    name TEXT,
+    status TEXT
+)""")
 db.commit()
 
 
@@ -98,6 +105,13 @@ async def admin_handler(msg: Message):
             (True, msg.from_user.id)
         )
         db.commit()
+    else:
+        await msg.answer(f'{msg.from_user.first_name}, введите Ваш пароль:')
+        cursor.execute(
+            "UPDATE admins SET login = ? WHERE id = ?",
+            (True, msg.from_user.id)
+        )
+        db.commit()
 
 
 @dp.message()
@@ -137,7 +151,7 @@ async def show_formul_handler(msg: Message):
         # отправка клавиатуры
         await msg.answer('Выберите:', reply_markup=keyboard)
     else:
-        cursor.execute("SELECT input_passwd FROM admins WHERE id = ?",
+        cursor.execute("SELECT input_passwd, login FROM admins WHERE id = ?",
                         (msg.from_user.id,)
                         )
         admin = cursor.fetchone()
@@ -155,6 +169,23 @@ async def show_formul_handler(msg: Message):
                 await msg.answer('Пароль успешно обновлен! Для \
 входа в админ-панель используйте команду \
 /admin')
+            if admin[1]:
+                cursor.execute(
+                    "SELECT password FROM admins WHERE id = ?",
+                    (msg.from_user.id,)
+                )
+                if cursor.fetchone()[0] == msg.text:
+                    cursor.execute(
+                        "UPDATE admins SET login = ? WHERE id = ?",
+                        (False, msg.from_user.id)
+                    )
+                    cursor.execute(
+                        "UPDATE admins SET in_admin = ? WHERE id = ?",
+                        (True, msg.from_user.id)
+                    )
+                    db.commit()
+                    await msg.answer('Вы успешно вошли в систему! \
+Админ-панель:', reply_markup=kbs.get_admin_keyboard())
 
 
 #? вход в программу
