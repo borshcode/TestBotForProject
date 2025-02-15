@@ -9,7 +9,8 @@ import os
 import sqlite3
 
 from myJson import Json
-from downloadPhoto import download_photo, get_name
+from downloadPhoto import download_photos_from_json, download_photos_from_DB,\
+    get_name
 import config as cfg
 import keyboards as kbs
 
@@ -18,26 +19,28 @@ import keyboards as kbs
 db = sqlite3.connect('database.db')
 cursor = db.cursor()
 
-cursor.execute("""CREATE TABLE IF NOT EXISTS users (
-    id INT,
-    is_banned BOOL
-)""")
-cursor.execute("""CREATE TABLE IF NOT EXISTS admins (
-    id INT,
-    nickname TEXT,
-    password TEXT,
-    in_admin BOOL,
-    input_passwd BOOL,
-    login BOOL
-)""")
-cursor.execute("""CREATE TABLE IF NOT EXISTS formuls (
-    id INT AUTOINCREMENT PRIMARY KEY,
-    subject TEXT,
-    category TEXT,
-    name TEXT,
-    status TEXT
-)""")
-db.commit()
+def create_tables():
+    cursor.execute("""CREATE TABLE IF NOT EXISTS users (
+        id INT,
+        is_banned BOOL
+    )""")
+    cursor.execute("""CREATE TABLE IF NOT EXISTS admins (
+        id INT,
+        nickname TEXT,
+        password TEXT,
+        in_admin BOOL,
+        input_passwd BOOL,
+        login BOOL
+    )""")
+    cursor.execute("""CREATE TABLE IF NOT EXISTS formuls (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        path TEXT,
+        name TEXT,
+        description TEXT,
+        link TEXT,
+        status TEXT
+    )""")
+    db.commit()
 
 
 #? БОТ
@@ -114,6 +117,7 @@ async def admin_handler(msg: Message):
         db.commit()
 
 
+#? обработка сообщений
 @dp.message()
 async def show_formul_handler(msg: Message):
     if msg.text[0] == '/':
@@ -190,8 +194,10 @@ async def show_formul_handler(msg: Message):
 
 #? вход в программу
 if __name__ == '__main__':
-    download_photo()
-    formuls = Json('formuls.json') # созданиме экземпляра класса Json
-    formuls.load() # загрузка Json-файла
+    create_tables()
+    # download_photos_from_json()
+    download_photos_from_DB()
+    # formuls = Json('formuls.json') # созданиме экземпляра класса Json
+    # formuls.load() # загрузка Json-файла
     logging.basicConfig(level=logging.INFO) # запуск логирования
     asyncio.run(main())

@@ -8,6 +8,68 @@
             "Сумма кубов": ["https://educon.by/images/formuly/allmath/5.png", "Описание"],
             "Куб суммы": ["https://educon.by/images/formuly/allmath/6.png", "Описание"],
             "Куб разности": ["https://educon.by/images/formuly/allmath/7.png", "Описание"]
-        }
+	"Квадратное уравнение и формула разложения трёхчлена на множители": {
+	    "Пример квадратного уравнения:": ["https://educon.by/images/formuly/allmath/10.png"],
+	    "Формула дискриминанта": ["https://educon.by/images/formuly/allmath/13.png"],
+	    "Если D>0": ["https://educon.by/images/formuly/allmath/14.png"],
+	    "Если D=0": ["https://educon.by/images/formuly/allmath/15.png"],
+	    "Если D<0": ["https://educon.by/images/formuly/allmath/11.png"],
+	    "Разложение квадратного трёхчлена если корень один": ["https://educon.by/images/formuly/allmath/12.png"],
+	    "Теорема Виета, если два корня": ["https://educon.by/images/formuly/allmath/16.png"],
+	    "Произведение корней квадратного уравнения": ["https://educon.by/images/formuly/allmath/17.png"],
+	"Парабола": {
+	    "Квадратичная функция графика параболы": ["https://educon.by/images/formuly/allmath/18.png"],
+	    "Формула вычисления координат вершины, Х": ["https://educon.by/images/formuly/allmath/19.png"],
+	    "Формула вычисления Y параболы": ["https://educon.by/images/formuly/allmath/20.png"],
+	 "Свойства степеней и корней": {
+	    "Основные свойства степеней": ["https://educon.by/images/formuly/allmath/21.png"]
+	    "при n > 0": ["https://educon.by/images/formuly/allmath/28.png"]
+	 "Основные свойства математических корней": {
+	    " ;[https://educon.by/images/formuly/allmath/32.png]
+	    "Для арифметических корней": ["https://educon.by/images/formuly/allmath/34.png"]
+	    "Последнее справедливо: если n – нечетное, то для любого a; если же n – четное, то только при a больше либо равном нолю.": ["https://educon.by/images/formuly/allmath/35.png"]
+	    "Для корня четной степени": ["https://educon.by/images/formuly/allmath/36.png"]
+	 "Формулы с логарифмами": {
+	    " ;["https://educon.by/images/formuly/allmath/41.png"]
+	    "Определение логарифма можно записать и другим способом": ["https://educon.by/images/formuly/allmath/38.png"]
+	    "Свойства логарифмов": ["https://educon.by/images/formuly/allmath/39.png"]
+	    "Логарифм произведения": ["https://educon.by/images/formuly/allmath/42.png"]
+	    "Логарифм дроби": ["https://educon.by/images/formuly/allmath/43.png"]
+	    "Вынесение степени за знак логарифма": ["https://educon.by/images/formuly/allmath/45.png"]
+	    "Другие полезные свойства логарифмов": ["https://educon.by/images/formuly/allmath/48.png"]
+	 "Арифметическая прогрессия": {
+	    "Формулы n-го члена арифметической прогрессии": ["https://educon.by/images/formuly/allmath/50.png"]
+	    "Соотношение между тремя соседними членами арифметической прогрессии": ["https://educon.by/images/formuly/allmath/52.png"]
+	    "Формула суммы арифметической прогрессии": ["https://educon.by/images/formuly/allmath/53.png"]
+	    "Свойство арифметической прогрессии": ["https://educon.by/images/formuly/allmath/54.png"]
+	 "Геометрическая прогрессия": {
+	    "Формулы n-го члена геометрической прогрессии": ["https://educon.by/images/formuly/allmath/55.png"]
+	    "Соотношение между тремя соседними членами геометрической прогрессии": ["https://educon.by/images/formuly/allmath/57.png"]
+	    "Формула суммы геометрической прогрессии": ["https://educon.by/images/formuly/allmath/58.png"]
+	    "Формула суммы бесконечно убывающей геометрической прогрессии": ["https://educon.by/images/formuly/allmath/59.png"]
+	    "Свойство геометрической прогрессии": ["https://educon.by/images/formuly/allmath/60.png"]
+	 "Тригонометрия": {
+	    "Пусть имеется прямоугольный треугольник": ["https://educon.by/images/formuly/allmath/61.png"]
+	    "Тогда, определение синуса": ["https://educon.by/images/formuly/allmath/62.png"]
+	    "Определение косинуса": ["https://educon.by/images/formuly/allmath/63.png"]
+	    "Определение тангенса": ["https://educon.by/images/formuly/allmath/64.png"]
+	    "Определение котангенса": [https://educon.by/images/formuly/allmath/65.png"]
+	    "Основное тригонометрическое тождество": ["https://educon.by/images/formuly/allmath/66.png"]
+	    "Простейшие следствия из основного тригонометрического тождества": ["https://educon.by/images/formuly/allmath/67.png"]
+	 "Формулы двойного угла": {
+	    "Синус двойного угла": ["https://educon.by/images/formuly/allmath/69.png"]
+	    "Косинус двойного угла": ["https://educon.by/images/formuly/allmath/70.png"]
+	    "Тангенс двойного угла": ["https://educon.by/images/formuly/allmath/71.png"]
+	    "Котангенс двойного угла": ["https://educon.by/images/formuly/allmath/72.png"]
+	 "Тригонометрические формулы сложения": {
+	    "Синус суммы": ["https://educon.by/images/formuly/allmath/73.png"]
+	    "Синус разности": ["https://educon.by/images/formuly/allmath/74.png"]
+	    "Косинус суммы": ["https://educon.by/images/formuly/allmath/75.png"]
+	    "Косинус разности": ["https://educon.by/images/formuly/allmath/76.png:"]
+	    "Тангенс суммы": ["https://educon.by/images/formuly/allmath/77.png"]
+	    "Тангенс разности": ["https://educon.by/images/formuly/allmath/78.png"]
+	    "Котангенс суммы": ["https://educon.by/images/formuly/allmath/79.png"]
+	    "Котангенс разности": ["https://educon.by/images/formuly/allmath/80.png"]
+        } 
     }
 }

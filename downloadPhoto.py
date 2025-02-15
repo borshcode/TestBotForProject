@@ -1,11 +1,12 @@
 import requests
 import os
+import sqlite3
 
 from myJson import Json
 
-# links = Json('./formuls.json')
-# links.load()
-# global_data = links.content
+db = sqlite3.connect("database.db")
+cursor = db.cursor()
+
 
 HEADERS = {
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36 Edg/131.0.0.0'
@@ -37,7 +38,7 @@ def get_photo(url: str):
     os.chdir('../')
 
     
-def download_photo():
+def download_photos_from_json():
     urls = []
     links = Json('./formuls.json')
     links.load()
@@ -60,4 +61,11 @@ def download_photo():
 
     for url in urls:
         get_photo(url)
+        
+        
+def download_photos_from_DB():
+    urls = cursor.execute("SELECT link FROM formuls").fetchall()
+    
+    for url in urls:
+        get_photo(url[0])
         
