@@ -1,5 +1,6 @@
 import requests
 import os
+import shutil
 import sqlite3
 
 from myJson import Json
@@ -16,7 +17,7 @@ def get_name(url: str) -> str:
     name = ''
     while True:
         char = url[index]
-        if char != '/':
+        if char != '/' and char != '\\':
             name += char
         else:
             break
@@ -30,11 +31,17 @@ def get_photo(url: str):
     os.chdir('./Img/')
     name = get_name(url)
 
-    if not os.path.exists(os.path.join(os.getcwd(), name)):
-        response = requests.get(url, headers=HEADERS)
-        if response.status_code == 200:
-            with open(name, 'wb') as img:
-                img.write(response.content)
+    if url.startswith('http'):
+        if not os.path.exists(os.path.join(os.getcwd(), name)):
+            response = requests.get(url, headers=HEADERS)
+            if response.status_code == 200:
+                with open(name, 'wb') as img:
+                    img.write(response.content)
+            else:
+                print('Downloading error: {}'.format(response.status_code))
+    else:
+        if not os.path.exists(url):
+            print(f'File {url} not found in Img folder!')
     os.chdir('../')
 
     

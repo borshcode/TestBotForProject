@@ -1,10 +1,9 @@
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 
-def get_keyboard(path: dict, go_to_main: bool = True) -> ReplyKeyboardMarkup:
+def get_keyboard(cats: list, go_to_main: bool = True) -> ReplyKeyboardMarkup:
     keyboard = []
-    keys = list(path.keys())
-    for key in keys:
-        keyboard.append([KeyboardButton(text=key)])
+    for cat in cats:
+        keyboard.append([KeyboardButton(text=cat)])
     if go_to_main:
         keyboard.append([KeyboardButton(text='На главное меню')])
     

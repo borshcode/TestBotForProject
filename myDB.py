@@ -7,9 +7,14 @@ def get_categories(level: int, old_path: str = '') -> list:
     result = []
     all_paths = cursor.execute("SELECT path FROM formuls").fetchall()
     old_categories = old_path.split('/')
-    if level == 0:
-        for path in all_paths:
-            categories = path[0].split('/')
+    for path in all_paths:
+        categories = path[0].split('/')
+        if old_path != '':
+            for old_cat in old_categories:
+                if old_cat in categories:
+                    if categories[level] not in result:
+                        result.append(categories[level])
+        else:
             if categories[level] not in result:
                 result.append(categories[level])
     return result

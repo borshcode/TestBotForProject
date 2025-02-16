@@ -9,6 +9,7 @@ import os
 import sqlite3
 
 from myJson import Json
+from myDB import get_categories
 from downloadPhoto import download_photos_from_json, download_photos_from_DB,\
     get_name
 import config as cfg
@@ -20,6 +21,7 @@ db = sqlite3.connect('database.db')
 cursor = db.cursor()
 
 def create_tables():
+    # создаем таблицы в БД
     cursor.execute("""CREATE TABLE IF NOT EXISTS users (
         id INT,
         is_banned BOOL
@@ -74,14 +76,14 @@ f'''
 Я помогу тебе найти нужные тебе формулы!
 Выбери нужную категорию из списка ниже:
 ''',
-        reply_markup=kbs.get_keyboard(formuls.content, False)
+        reply_markup=kbs.get_keyboard(get_categories(0), False)
         )
     else:
         text = f'''
 Выбери нужную категорию из списка ниже:
 '''
         await msg.answer(text, reply_markup=kbs.get_keyboard(
-            formuls.content,
+            get_categories(0),
             False
             ))
 
