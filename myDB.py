@@ -20,5 +20,9 @@ def get_categories(level: int, old_path: str = '') -> list:
     return result
 
 
+def get_col_levels():
+    
+
+
 if __name__ == '__main__':
     print(get_categories(0))

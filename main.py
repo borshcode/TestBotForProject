@@ -24,6 +24,7 @@ def create_tables():
     # создаем таблицы в БД
     cursor.execute("""CREATE TABLE IF NOT EXISTS users (
         id INT,
+        path TEXT,
         is_banned BOOL
     )""")
     cursor.execute("""CREATE TABLE IF NOT EXISTS admins (
@@ -64,8 +65,9 @@ async def start_handler(msg: Message, first: bool = True):
     # print(msg.from_user.username) #TODO: отладка, при релизе убрать
     cursor.execute("SELECT * FROM users WHERE id = ?", (msg.from_user.id,))
     if cursor.fetchone() == None:
-        cursor.execute("INSERT INTO users VALUES (?, ?)", (
+        cursor.execute("INSERT INTO users VALUES (?, ?, ?)", (
             msg.from_user.id,
+            '',
             False
             ))
         db.commit()
@@ -121,10 +123,19 @@ async def admin_handler(msg: Message):
 
 #? обработка сообщений
 @dp.message()
-async def show_formul_handler(msg: Message):
+async def message_handler(msg: Message):
     if msg.text[0] == '/':
         await msg.answer('Неизвестная команда!')
         return
+    
+    old_path = cursor.execute(
+        "SELECT path FROM users WHERE id = ?",
+        (msg.from_user.id,)
+    ).fetchone()[0]
+    
+    
+    #TODO: удалить после доработки
+    '''
     keys = list(formuls.content.keys())
     keyboard = None # сюда запишем клавиатуру
     for key in keys: # заходим в выбор предметов
@@ -192,7 +203,7 @@ async def show_formul_handler(msg: Message):
                     db.commit()
                     await msg.answer('Вы успешно вошли в систему! \
 Админ-панель:', reply_markup=kbs.get_admin_keyboard())
-
+    '''
 
 #? вход в программу
 if __name__ == '__main__':
