@@ -9,9 +9,8 @@ import os
 import sqlite3
 
 from myJson import Json
-from myDB import get_categories
-from downloadPhoto import download_photos_from_json, download_photos_from_DB,\
-    get_name
+from myDB import get_categories, create_tables
+from downloadPhoto import *
 import config as cfg
 import keyboards as kbs
 
@@ -19,31 +18,6 @@ import keyboards as kbs
 #? База Данных: инициализация
 db = sqlite3.connect('database.db')
 cursor = db.cursor()
-
-def create_tables():
-    # создаем таблицы в БД
-    cursor.execute("""CREATE TABLE IF NOT EXISTS users (
-        id INT,
-        path TEXT,
-        is_banned BOOL
-    )""")
-    cursor.execute("""CREATE TABLE IF NOT EXISTS admins (
-        id INT,
-        nickname TEXT,
-        password TEXT,
-        in_admin BOOL,
-        input_passwd BOOL,
-        login BOOL
-    )""")
-    cursor.execute("""CREATE TABLE IF NOT EXISTS formuls (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        path TEXT,
-        name TEXT,
-        description TEXT,
-        link TEXT,
-        status TEXT
-    )""")
-    db.commit()
 
 
 #? БОТ
@@ -62,7 +36,6 @@ async def main():
 #? обработка команды /start
 @dp.message(Command('start'))
 async def start_handler(msg: Message, first: bool = True):
-    # print(msg.from_user.username) #TODO: отладка, при релизе убрать
     cursor.execute("SELECT * FROM users WHERE id = ?", (msg.from_user.id,))
     if cursor.fetchone() == None:
         cursor.execute("INSERT INTO users VALUES (?, ?, ?)", (
@@ -70,7 +43,13 @@ async def start_handler(msg: Message, first: bool = True):
             '',
             False
             ))
-        db.commit()
+        
+    else:
+        cursor.execute(
+            "UPDATE users SET path = ? WHERE id = ?",
+            ('', msg.from_user.id)
+        )
+    db.commit()
     if first: # проверка на команду start
         await msg.answer(
 f'''
@@ -124,53 +103,62 @@ async def admin_handler(msg: Message):
 #? обработка сообщений
 @dp.message()
 async def message_handler(msg: Message):
+    # обработка "левых" команд
     if msg.text[0] == '/':
         await msg.answer('Неизвестная команда!')
         return
     
+    keyboard = None # переменная под клавиатуру
+    file = False
+    # получение пути из БД
     old_path = cursor.execute(
         "SELECT path FROM users WHERE id = ?",
         (msg.from_user.id,)
     ).fetchone()[0]
-    
-    
-    #TODO: удалить после доработки
-    '''
-    keys = list(formuls.content.keys())
-    keyboard = None # сюда запишем клавиатуру
-    for key in keys: # заходим в выбор предметов
-        if msg.text in keys:
-            
-            keyboard = kbs.get_keyboard(formuls.content[msg.text])
-            break
-        keys1 = list(formuls.content[key].keys())
-        for key1 in keys1: # заходим в выбор категории
-            if msg.text in keys1:
-                # получаем клавиатуру формул
-                keyboard = kbs.get_keyboard(formuls.content[key][msg.text])
-                break
-            keys2 = list(formuls.content[key][key1].keys())
-            if msg.text in keys2:
-                os.chdir('./Img/')
-                try: # игнор ошибки
-                    # отправка описания
-                    await msg.answer(formuls.content[key][key1][msg.text][1])
-                except IndexError:
-                    pass
-                # отправка формулы
-                await msg.answer_photo(FSInputFile(get_name(
-                                    formuls.content[key][key1][msg.text][0]
-                                    )))
-                os.chdir('../')
-                return
-    
+
+    # формирование нового пути
+    new_path = old_path + msg.text + '/'
+    level_names = new_path.split('/')
+    level_names.remove('')
+    level = len(level_names) # глубина "погружения" :)
+
+    categories = get_categories(level, new_path) # получение новых категорий
+    if categories != 1:
+        keyboard = kbs.get_keyboard(categories) # запись клавиатуры
+        
+        # обновление пути в профиле пользователя ( БД )
+        cursor.execute(
+        "UPDATE users SET path = ? WHERE id = ?",
+        (new_path, msg.from_user.id)
+        )
+        db.commit()
+    else:
+        file = True
+        # получение описания и ссылки из БД
+        data = cursor.execute(
+            "SELECT description, link FROM formuls WHERE path = ? AND name = ?",
+            (old_path, msg.text)
+        ).fetchone()
+        description, file_link = data[0], data[1]
+
+    if file:
+        # отправка фото и описания
+        os.chdir('./Img/')
+        await msg.answer_photo(FSInputFile(get_name(file_link)))
+        if description:
+            await msg.answer(description)
+        os.chdir('../')
+
+        
+
     if keyboard != None:
         # отправка клавиатуры
         await msg.answer('Выберите:', reply_markup=keyboard)
     else:
+        #? логин админа
         cursor.execute("SELECT input_passwd, login FROM admins WHERE id = ?",
-                        (msg.from_user.id,)
-                        )
+            (msg.from_user.id,)
+        )
         admin = cursor.fetchone()
         if admin != None:
             if admin[0]:
@@ -203,14 +191,10 @@ async def message_handler(msg: Message):
                     db.commit()
                     await msg.answer('Вы успешно вошли в систему! \
 Админ-панель:', reply_markup=kbs.get_admin_keyboard())
-    '''
 
 #? вход в программу
 if __name__ == '__main__':
     create_tables()
-    # download_photos_from_json()
     download_photos_from_DB()
-    # formuls = Json('formuls.json') # созданиме экземпляра класса Json
-    # formuls.load() # загрузка Json-файла
     logging.basicConfig(level=logging.INFO) # запуск логирования
     asyncio.run(main())

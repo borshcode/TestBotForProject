@@ -1,9 +1,15 @@
 import sqlite3
 
+from downloadPhoto import get_name
+
 db = sqlite3.connect('database.db')
 cursor = db.cursor()
 
-def get_categories(level: int, old_path: str = '') -> list:
+def get_categories(level: int, old_path: str = ''):
+    '''
+    Если все нормально, возвращает категории.
+    Если каталогов нет, то возвращает 1
+    '''
     result = []
     all_paths = cursor.execute("SELECT path FROM formuls").fetchall()
     old_categories = old_path.split('/')
@@ -12,17 +18,64 @@ def get_categories(level: int, old_path: str = '') -> list:
         if old_path != '':
             for old_cat in old_categories:
                 if old_cat in categories:
-                    if categories[level] not in result:
-                        result.append(categories[level])
+                    try:
+                        if categories[level] not in result:
+                            result.append(categories[level])
+                    except IndexError:
+                        return 1
         else:
-            if categories[level] not in result:
-                result.append(categories[level])
+            try:
+                if categories[level] not in result:
+                    result.append(categories[level])
+            except IndexError:
+                return 1
+    if '' in result:
+        result.remove('')
+    if result == []:
+        return get_names(old_path)
     return result
 
 
-def get_col_levels():
-    
+def get_names(path: str) -> list:
+    print(path)
+    cursor.execute(
+        "SELECT name FROM formuls WHERE path = ?",
+        (path,)
+    )
+    names_from_db = cursor.fetchall()
+    print(names_from_db)
+    names = []
+    for name in names_from_db:
+        names.append(name[0])
+    return names
+
+
+def create_tables():
+    # создаем таблицы в БД
+    cursor.execute("""CREATE TABLE IF NOT EXISTS users (
+        id INT,
+        path TEXT,
+        warns INT,
+        is_banned BOOL
+    )""")
+    cursor.execute("""CREATE TABLE IF NOT EXISTS admins (
+        id INT,
+        nickname TEXT,
+        password TEXT,
+        in_admin BOOL,
+        input_passwd BOOL,
+        login BOOL
+    )""")
+    cursor.execute("""CREATE TABLE IF NOT EXISTS formuls (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        path TEXT,
+        name TEXT,
+        description TEXT,
+        link TEXT,
+        status TEXT
+    )""")
+    db.commit()
 
 
 if __name__ == '__main__':
-    print(get_categories(0))
+    pass

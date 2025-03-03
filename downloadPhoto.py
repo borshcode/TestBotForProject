@@ -43,31 +43,6 @@ def get_photo(url: str):
         if not os.path.exists(url):
             print(f'File {url} not found in Img folder!')
     os.chdir('../')
-
-    
-def download_photos_from_json():
-    urls = []
-    links = Json('./formuls.json')
-    links.load()
-    global_data = links.content
-    data = global_data
-
-    for dic in list(data.values()):
-        value = list(data.values())
-        while True:
-            for dic in list(dic.values()):
-                try:
-                    value = list(dic.values())
-                    data = dic
-                except AttributeError:
-                    break
-            break
-        for i in value:
-            urls.append(i[0])
-        data = global_data
-
-    for url in urls:
-        get_photo(url)
         
         
 def download_photos_from_DB():
