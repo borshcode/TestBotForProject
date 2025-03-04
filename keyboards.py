@@ -13,6 +13,18 @@ def get_keyboard(cats: list, go_to_main: bool = True) -> ReplyKeyboardMarkup:
     )
 
 
+def get_start_keyboard(cats: list):
+    keyboard = []
+    for cat in cats:
+        keyboard.append([KeyboardButton(text=cat)])
+    keyboard.append([KeyboardButton(text='Предложить формулу')])
+
+    return ReplyKeyboardMarkup(
+        keyboard=keyboard,
+        resize_keyboard=True
+    )
+
+
 def get_admin_keyboard() -> ReplyKeyboardMarkup:
     keyboard = ReplyKeyboardMarkup(
         keyboard=[

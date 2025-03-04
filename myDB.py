@@ -32,18 +32,16 @@ def get_categories(level: int, old_path: str = ''):
     if '' in result:
         result.remove('')
     if result == []:
-        return get_names(old_path)
+        return get_names_from_DB(old_path)
     return result
 
 
-def get_names(path: str) -> list:
-    print(path)
+def get_names_from_DB(path: str) -> list:
     cursor.execute(
         "SELECT name FROM formuls WHERE path = ?",
         (path,)
     )
     names_from_db = cursor.fetchall()
-    print(names_from_db)
     names = []
     for name in names_from_db:
         names.append(name[0])

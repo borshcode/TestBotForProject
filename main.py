@@ -36,15 +36,19 @@ async def main():
 #? обработка команды /start
 @dp.message(Command('start'))
 async def start_handler(msg: Message, first: bool = True):
+    # проверка, зареган ли юзер?
     cursor.execute("SELECT * FROM users WHERE id = ?", (msg.from_user.id,))
     if cursor.fetchone() == None:
-        cursor.execute("INSERT INTO users VALUES (?, ?, ?)", (
+        # регистрация юзера в БД
+        cursor.execute("INSERT INTO users VALUES (?, ?, ?, ?)", (
             msg.from_user.id,
             '',
+            0,
             False
             ))
         
     else:
+        # сброс пути
         cursor.execute(
             "UPDATE users SET path = ? WHERE id = ?",
             ('', msg.from_user.id)
@@ -57,16 +61,16 @@ f'''
 Я помогу тебе найти нужные тебе формулы!
 Выбери нужную категорию из списка ниже:
 ''',
-        reply_markup=kbs.get_keyboard(get_categories(0), False)
+        reply_markup=kbs.get_start_keyboard(get_categories(0))
         )
     else:
-        text = f'''
+        text = '''
 Выбери нужную категорию из списка ниже:
 '''
-        await msg.answer(text, reply_markup=kbs.get_keyboard(
-            get_categories(0),
-            False
-            ))
+        await msg.answer(
+            text, 
+            reply_markup=kbs.get_start_keyboard(get_categories(0))
+        )
 
 
 # обработчики нажатий на кнопки
@@ -107,7 +111,72 @@ async def message_handler(msg: Message):
     if msg.text[0] == '/':
         await msg.answer('Неизвестная команда!')
         return
+
+    #? вход в админку
+    cursor.execute("SELECT input_passwd, login FROM admins WHERE id = ?",
+            (msg.from_user.id,)
+        )
+    admin = cursor.fetchone()
+    if admin != None:
+        if admin[0]:
+            cursor.execute(
+                "UPDATE admins SET password = ? WHERE id = ?",
+                (msg.text, msg.from_user.id)
+            )
+            cursor.execute(
+                "UPDATE admins SET input_passwd = ? WHERE id = ?",
+                (False, msg.from_user.id)
+            )
+            db.commit()
+            await msg.answer('Пароль успешно обновлен! Для \
+входа в админ-панель используйте команду \
+/admin')
+        if admin[1]:
+            cursor.execute(
+                "SELECT password FROM admins WHERE id = ?",
+                (msg.from_user.id,)
+            )
+            if cursor.fetchone()[0] == msg.text:
+                cursor.execute(
+                    "UPDATE admins SET login = ? WHERE id = ?",
+                    (False, msg.from_user.id)
+                )
+                cursor.execute(
+                    "UPDATE admins SET in_admin = ? WHERE id = ?",
+                    (True, msg.from_user.id)
+                )
+                db.commit()
+                await msg.answer('Вы успешно вошли в админ-панель! \
+Админ-панель:', reply_markup=kbs.get_admin_keyboard())
+            else:
+                cursor.execute(
+                    "UPDATE admins SET login = ? WHERE id = ?",
+                    (False, msg.from_user)
+                )
+                await msg.answer('Неверный пароль!')
+                await msg.answer('Вы были выкинуты из админ-панели! Причина: \
+Неверный пароль.')
+                return
+                
+        #? админка
+        in_admin = cursor.execute(
+            "SELECT in_admin FROM admins WHERE id = ?",
+            (msg.from_user.id,)
+        ).fetchone()
+        if in_admin:
+            if msg.text == 'Выйти из панели':
+                cursor.execute(
+                    "UPDATE admins SET in_admin = ? WHERE id = ?",
+                    (False, msg.from_user.id)
+                )
+                db.commit()
+                await msg.answer('Вы успешно вышли из админ-панели')
+                await start_handler(msg, False)
+
+    if msg.text == 'Предложить формулу':
+        pass
     
+    #? выбор формул
     keyboard = None # переменная под клавиатуру
     file = False
     # получение пути из БД
@@ -136,7 +205,8 @@ async def message_handler(msg: Message):
         file = True
         # получение описания и ссылки из БД
         data = cursor.execute(
-            "SELECT description, link FROM formuls WHERE path = ? AND name = ?",
+            "SELECT description, link FROM formuls \
+            WHERE path = ? AND name = ?",
             (old_path, msg.text)
         ).fetchone()
         description, file_link = data[0], data[1]
@@ -154,43 +224,6 @@ async def message_handler(msg: Message):
     if keyboard != None:
         # отправка клавиатуры
         await msg.answer('Выберите:', reply_markup=keyboard)
-    else:
-        #? логин админа
-        cursor.execute("SELECT input_passwd, login FROM admins WHERE id = ?",
-            (msg.from_user.id,)
-        )
-        admin = cursor.fetchone()
-        if admin != None:
-            if admin[0]:
-                cursor.execute(
-                    "UPDATE admins SET password = ? WHERE id = ?",
-                    (msg.text, msg.from_user.id)
-                )
-                cursor.execute(
-                    "UPDATE admins SET input_passwd = ? WHERE id = ?",
-                    (False, msg.from_user.id)
-                )
-                db.commit()
-                await msg.answer('Пароль успешно обновлен! Для \
-входа в админ-панель используйте команду \
-/admin')
-            if admin[1]:
-                cursor.execute(
-                    "SELECT password FROM admins WHERE id = ?",
-                    (msg.from_user.id,)
-                )
-                if cursor.fetchone()[0] == msg.text:
-                    cursor.execute(
-                        "UPDATE admins SET login = ? WHERE id = ?",
-                        (False, msg.from_user.id)
-                    )
-                    cursor.execute(
-                        "UPDATE admins SET in_admin = ? WHERE id = ?",
-                        (True, msg.from_user.id)
-                    )
-                    db.commit()
-                    await msg.answer('Вы успешно вошли в систему! \
-Админ-панель:', reply_markup=kbs.get_admin_keyboard())
 
 #? вход в программу
 if __name__ == '__main__':
