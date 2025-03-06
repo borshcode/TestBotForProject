@@ -54,7 +54,8 @@ def create_tables():
         id INT,
         path TEXT,
         warns INT,
-        is_banned BOOL
+        is_banned BOOL,
+        creater BOOL
     )""")
     cursor.execute("""CREATE TABLE IF NOT EXISTS admins (
         id INT,
@@ -62,7 +63,8 @@ def create_tables():
         password TEXT,
         in_admin BOOL,
         input_passwd BOOL,
-        login BOOL
+        login BOOL,
+        manager BOOL
     )""")
     cursor.execute("""CREATE TABLE IF NOT EXISTS formuls (
         id INTEGER PRIMARY KEY AUTOINCREMENT,

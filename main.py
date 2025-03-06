@@ -40,10 +40,11 @@ async def start_handler(msg: Message, first: bool = True):
     cursor.execute("SELECT * FROM users WHERE id = ?", (msg.from_user.id,))
     if cursor.fetchone() == None:
         # регистрация юзера в БД
-        cursor.execute("INSERT INTO users VALUES (?, ?, ?, ?)", (
+        cursor.execute("INSERT INTO users VALUES (?, ?, ?, ?, ?)", (
             msg.from_user.id,
             '',
             0,
+            False,
             False
             ))
         
@@ -172,6 +173,12 @@ async def message_handler(msg: Message):
                 db.commit()
                 await msg.answer('Вы успешно вышли из админ-панели')
                 await start_handler(msg, False)
+            elif msg.text == 'Новые формулы':
+                cursor.execute(
+                    "UPDATE admins SET manager = ? WHERE id = ?",
+                    (True, msg.from_user.id)
+                )
+                db.commit()
 
     if msg.text == 'Предложить формулу':
         pass
