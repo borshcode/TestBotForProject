@@ -103,11 +103,33 @@ async def admin_handler(msg: Message):
             (True, msg.from_user.id)
         )
         db.commit()
+        
+        
+async def manager_show_cur_card(msg: Message):
+    cursor.execute(
+        'SELECT * FROM formuls WHERE status = ?',
+        ('CHECK',)
+    )
+    os.chdir('./Img/')
+    card = cursor.fetchone()
+    # await msg.answer_photo(FSInputFile(get_name(card[4])))
+    await msg.answer(
+f'''
+Название: {card[2]}
+Описание: {card[3]}
+Ссылка на фото: {card[4]}
+''')
+    os.chdir('../')
+    await msg.answer(
+        'Страница редактирования:',
+        reply_markup = kbs.get_manager_keyboard()
+    )
 
 
 #? обработка сообщений
 @dp.message()
 async def message_handler(msg: Message):
+    user_id = msg.from_user.id
     # обработка "левых" команд
     if msg.text[0] == '/':
         await msg.answer('Неизвестная команда!')
@@ -115,18 +137,18 @@ async def message_handler(msg: Message):
 
     #? вход в админку
     cursor.execute("SELECT input_passwd, login FROM admins WHERE id = ?",
-            (msg.from_user.id,)
+            (user_id,)
         )
     admin = cursor.fetchone()
     if admin != None:
         if admin[0]:
             cursor.execute(
                 "UPDATE admins SET password = ? WHERE id = ?",
-                (msg.text, msg.from_user.id)
+                (msg.text, user_id)
             )
             cursor.execute(
                 "UPDATE admins SET input_passwd = ? WHERE id = ?",
-                (False, msg.from_user.id)
+                (False, user_id)
             )
             db.commit()
             await msg.answer('Пароль успешно обновлен! Для \
@@ -135,16 +157,20 @@ async def message_handler(msg: Message):
         if admin[1]:
             cursor.execute(
                 "SELECT password FROM admins WHERE id = ?",
-                (msg.from_user.id,)
+                (user_id,)
             )
             if cursor.fetchone()[0] == msg.text:
                 cursor.execute(
                     "UPDATE admins SET login = ? WHERE id = ?",
-                    (False, msg.from_user.id)
+                    (False, user_id)
                 )
                 cursor.execute(
                     "UPDATE admins SET in_admin = ? WHERE id = ?",
-                    (True, msg.from_user.id)
+                    (True, user_id)
+                )
+                cursor.execute(
+                    "UPDATE users SET path = ? WHERE id = ?",
+                    ('', user_id)
                 )
                 db.commit()
                 await msg.answer('Вы успешно вошли в админ-панель! \
@@ -162,13 +188,13 @@ async def message_handler(msg: Message):
         #? админка
         in_admin = cursor.execute(
             "SELECT in_admin FROM admins WHERE id = ?",
-            (msg.from_user.id,)
+            (user_id,)
         ).fetchone()
         if in_admin:
             if msg.text == 'Выйти из панели':
                 cursor.execute(
                     "UPDATE admins SET in_admin = ? WHERE id = ?",
-                    (False, msg.from_user.id)
+                    (False, user_id)
                 )
                 db.commit()
                 await msg.answer('Вы успешно вышли из админ-панели')
@@ -176,9 +202,18 @@ async def message_handler(msg: Message):
             elif msg.text == 'Новые формулы':
                 cursor.execute(
                     "UPDATE admins SET manager = ? WHERE id = ?",
-                    (True, msg.from_user.id)
+                    (True, user_id)
                 )
                 db.commit()
+                await manager_show_cur_card(msg)
+                return
+            
+            manager = cursor.execute(
+                "SELECT manager FROM admins WHERE id = ?",
+                (user_id,)
+            ).fetchone()[0]
+            if manager:
+                pass #TODO: закончить
 
     if msg.text == 'Предложить формулу':
         pass
@@ -189,7 +224,7 @@ async def message_handler(msg: Message):
     # получение пути из БД
     old_path = cursor.execute(
         "SELECT path FROM users WHERE id = ?",
-        (msg.from_user.id,)
+        (user_id,)
     ).fetchone()[0]
 
     # формирование нового пути
@@ -205,7 +240,7 @@ async def message_handler(msg: Message):
         # обновление пути в профиле пользователя ( БД )
         cursor.execute(
         "UPDATE users SET path = ? WHERE id = ?",
-        (new_path, msg.from_user.id)
+        (new_path, user_id)
         )
         db.commit()
     else:

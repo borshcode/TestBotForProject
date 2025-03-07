@@ -33,7 +33,8 @@ def get_admin_keyboard() -> ReplyKeyboardMarkup:
                 KeyboardButton(text='Сменить пароль'),
             ],
             [KeyboardButton(text='Выйти из панели')]
-        ]
+        ],
+        resize_keyboard=True
     )
     return keyboard
 
@@ -45,8 +46,8 @@ def get_manager_keyboard() -> ReplyKeyboardMarkup:
             [KeyboardButton(text='❌Отклонить❌')],
             [KeyboardButton(text='📋❌Отклонить и выдать пред.❌📋')],
             [
-                KeyboardButton(text='Следующая ➡️'),
                 KeyboardButton(text='Назад в панель🚪')
             ]
-        ]
+        ],
+        resize_keyboard=True
     )
