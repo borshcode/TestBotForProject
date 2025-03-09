@@ -51,3 +51,18 @@ def get_manager_keyboard() -> ReplyKeyboardMarkup:
         ],
         resize_keyboard=True
     )
+
+
+def get_card_edit_keyboard() -> ReplyKeyboardMarkup:
+    return ReplyKeyboardMarkup(
+        keyboard=[
+            [KeyboardButton(text='name')],
+            [KeyboardButton(text='description')],
+            [KeyboardButton(text='link')],
+            [KeyboardButton(text='path')],
+            [
+                KeyboardButton(text='✔️Опубликовать✔️')
+            ]
+        ],
+        resize_keyboard=True
+    )

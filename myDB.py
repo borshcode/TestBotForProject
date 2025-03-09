@@ -1,4 +1,5 @@
 import sqlite3
+from hashlib import sha256
 
 from downloadPhoto import get_name
 
@@ -11,7 +12,10 @@ def get_categories(level: int, old_path: str = ''):
     Если каталогов нет, то возвращает 1
     '''
     result = []
-    all_paths = cursor.execute("SELECT path FROM formuls").fetchall()
+    all_paths = cursor.execute(
+        "SELECT path FROM formuls WHERE status = ?",
+        ('OK',)
+    ).fetchall()
     old_categories = old_path.split('/')
     for path in all_paths:
         categories = path[0].split('/')
@@ -38,8 +42,8 @@ def get_categories(level: int, old_path: str = ''):
 
 def get_names_from_DB(path: str) -> list:
     cursor.execute(
-        "SELECT name FROM formuls WHERE path = ?",
-        (path,)
+        "SELECT name FROM formuls WHERE path = ? AND status = ?",
+        (path, 'OK')
     )
     names_from_db = cursor.fetchall()
     names = []
@@ -63,8 +67,15 @@ def create_tables():
         password TEXT,
         in_admin BOOL,
         input_passwd BOOL,
-        login BOOL,
-        manager BOOL
+        login BOOL
+    )""")
+    cursor.execute("""CREATE TABLE IF NOT EXISTS managers (
+        id INT,
+        id_card INT,
+        manage BOOL,
+        input_path BOOL,
+        input_name TEXT,
+        input BOOL
     )""")
     cursor.execute("""CREATE TABLE IF NOT EXISTS formuls (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -72,10 +83,15 @@ def create_tables():
         name TEXT,
         description TEXT,
         link TEXT,
-        status TEXT
+        status TEXT,
+        creater_id INTEGER
     )""")
     db.commit()
 
 
+def get_hash(text: str) -> str:
+    return sha256(bytes(text, 'utf-8')).hexdigest()
+
+
 if __name__ == '__main__':
-    pass
+    print(type(get_hash('1111')))

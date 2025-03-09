@@ -9,7 +9,7 @@ import os
 import sqlite3
 
 from myJson import Json
-from myDB import get_categories, create_tables
+from myDB import get_categories, create_tables, get_hash
 from downloadPhoto import *
 import config as cfg
 import keyboards as kbs
@@ -104,20 +104,25 @@ async def admin_handler(msg: Message):
         )
         db.commit()
         
-        
+
+#? функция для отображения текущей формулы (режим обзора новых формул)
 async def manager_show_cur_card(msg: Message):
+    card_id = cursor.execute(
+        "SELECT id_card FROM managers WHERE id = ?",
+        (msg.from_user.id,)
+    ).fetchone()[0]
     cursor.execute(
-        'SELECT * FROM formuls WHERE status = ?',
-        ('CHECK',)
+        "SELECT * FROM formuls WHERE id = ?",
+        (card_id,)
     )
     os.chdir('./Img/')
     card = cursor.fetchone()
-    # await msg.answer_photo(FSInputFile(get_name(card[4])))
     await msg.answer(
 f'''
-Название: {card[2]}
-Описание: {card[3]}
-Ссылка на фото: {card[4]}
+Название (name): {card[2]}
+Описание (description): {card[3]}
+Ссылка на фото (link): {card[4]}
+Путь в БД (path): {card[1]}
 ''')
     os.chdir('../')
     await msg.answer(
@@ -140,11 +145,12 @@ async def message_handler(msg: Message):
             (user_id,)
         )
     admin = cursor.fetchone()
+    # проверка: является ли пользователь админом
     if admin != None:
-        if admin[0]:
+        if admin[0]: # если нужен ввод пароля (для обновления)
             cursor.execute(
                 "UPDATE admins SET password = ? WHERE id = ?",
-                (msg.text, user_id)
+                (get_hash(msg.text), user_id)
             )
             cursor.execute(
                 "UPDATE admins SET input_passwd = ? WHERE id = ?",
@@ -154,12 +160,12 @@ async def message_handler(msg: Message):
             await msg.answer('Пароль успешно обновлен! Для \
 входа в админ-панель используйте команду \
 /admin')
-        if admin[1]:
+        if admin[1]: # если нужен ввод пароля (для входа)
             cursor.execute(
                 "SELECT password FROM admins WHERE id = ?",
                 (user_id,)
             )
-            if cursor.fetchone()[0] == msg.text:
+            if cursor.fetchone()[0] == get_hash(msg.text):
                 cursor.execute(
                     "UPDATE admins SET login = ? WHERE id = ?",
                     (False, user_id)
@@ -175,10 +181,11 @@ async def message_handler(msg: Message):
                 db.commit()
                 await msg.answer('Вы успешно вошли в админ-панель! \
 Админ-панель:', reply_markup=kbs.get_admin_keyboard())
+                return
             else:
                 cursor.execute(
                     "UPDATE admins SET login = ? WHERE id = ?",
-                    (False, msg.from_user)
+                    (False, msg.from_user.id)
                 )
                 await msg.answer('Неверный пароль!')
                 await msg.answer('Вы были выкинуты из админ-панели! Причина: \
@@ -191,6 +198,7 @@ async def message_handler(msg: Message):
             (user_id,)
         ).fetchone()
         if in_admin:
+            # если пользователь в админ-панели
             if msg.text == 'Выйти из панели':
                 cursor.execute(
                     "UPDATE admins SET in_admin = ? WHERE id = ?",
@@ -199,24 +207,245 @@ async def message_handler(msg: Message):
                 db.commit()
                 await msg.answer('Вы успешно вышли из админ-панели')
                 await start_handler(msg, False)
-            elif msg.text == 'Новые формулы':
-                cursor.execute(
-                    "UPDATE admins SET manager = ? WHERE id = ?",
-                    (True, user_id)
-                )
-                db.commit()
-                await manager_show_cur_card(msg)
                 return
+            elif msg.text == 'Новые формулы':
+                # переход к панели обзора формул
+                card_id = cursor.execute(
+                    "SELECT id FROM formuls WHERE status = ?",
+                    ('CHECK',)
+                ).fetchone()
+                if card_id != None:
+                    # если есть непросмотренные формулы
+                    # создание записи админа в таблице managers
+                    cursor.execute(
+                        "INSERT INTO managers VALUES (?, ?, ?, ?, ?, ?)",
+                        (user_id, card_id[0], False, False, '', False)
+                    )
+                    db.commit()
+                    await manager_show_cur_card(msg)
+                    del card_id
+                    return
+                else:
+                    await msg.answer('Новых формул нет! Отдыхаем)')
+                    return
             
             manager = cursor.execute(
-                "SELECT manager FROM admins WHERE id = ?",
+                "SELECT * FROM managers WHERE id = ?",
                 (user_id,)
-            ).fetchone()[0]
-            if manager:
-                pass #TODO: закончить
+            ).fetchone()
+
+            #? страница эдита формулы
+            if manager != None:
+                # если админ находится в панели обзора формул
+                if msg.text == 'Назад в панель🚪':
+                    cursor.execute(
+                        "DELETE FROM managers WHERE id = ?",
+                        (user_id,)
+                    )
+                    db.commit()
+                    await msg.answer(
+                        'Админ-панель:',
+                        reply_markup = kbs.get_admin_keyboard()
+                    )
+                    return
+                elif msg.text == '✔️Редактировать и подтвердить✔️':
+                    cursor.execute(
+                        "UPDATE managers SET manage = ? WHERE id = ?",
+                        (True, user_id)
+                    )
+                    db.commit()
+                    path = cursor.execute(
+                        "SELECT path FROM formuls WHERE id = ?",
+                        (manager[1],)
+                    ).fetchone()[0]
+                    if path == '':
+                        cursor.execute(
+                            "UPDATE managers SET input_path = ? WHERE id = ?",
+                            (True, user_id)
+                        )
+                        db.commit()
+                        await msg.answer(
+                            'Введите путь для формулы ("отмена" для отмены):'
+                        )
+                        return
+                    else:
+                        await msg.answer(
+                            'Выберите параметр для изменения:',
+                            reply_markup=kbs.get_card_edit_keyboard()
+                        )
+                        return
+                elif msg.text == '❌Отклонить❌':
+                    cursor.execute(
+                        "DELETE FROM formuls WHERE id = ?",
+                        (manager[1],)
+                    )
+                    db.commit()
+                    card_id = cursor.execute(
+                        "SELECT id FROM formuls WHERE status = ?",
+                        ('CHECK',)
+                    ).fetchone()
+                    if card_id != None:
+                        cursor.execute(
+                            "UPDATE managers SET id_card = ? WHERE id = ?",
+                            (card_id[0], user_id)
+                        )
+                        db.commit()
+                        del card_id
+                        await msg.answer('Формула удалена из БД')
+                        await manager_show_cur_card(msg)
+                    else:
+                        cursor.execute(
+                            "DELETE FROM managers WHERE id = ?",
+                            (user_id,)
+                        )
+                        await msg.answer(
+                            'Новые формулы закончились!\nАдмин-панель:',
+                            reply_markup=kbs.get_admin_keyboard()
+                        )
+                        db.commit()
+                    return
+                elif msg.text == '📋❌Отклонить и выдать пред.❌📋':
+                    # выдача варна и удаление формулы
+                    creater_id = cursor.execute(
+                        "SELECT creater_id FROM formuls WHERE id = ?",
+                        (manager[1],)
+                    ).fetchone()[0]
+                    warns = cursor.execute(
+                        "SELECT warns FROM users WHERE id = ?",
+                        (creater_id,)
+                    ).fetchone()[0]
+                    warns += 1
+                    if warns == 3:
+                        # если варнов много - бан
+                        cursor.execute(
+                            "UPDATE users SET is_banned = ? WHERE = ?",
+                            (True, creater_id)
+                        )
+                        db.commit()
+                    cursor.execute(
+                        "UPDATE users SET warns = ? WHERE id = ?",
+                        (warns, creater_id)
+                    )
+                    cursor.execute(
+                        "DELETE FROM formuls WHERE id = ?",
+                        (manager[1],)
+                    )
+                    db.commit()
+                    await msg.answer('Предупреждение выдано!')
+                    del creater_id
+
+                    # обновление id_card
+                    card_id = cursor.execute(
+                        "SELECT id FROM formuls WHERE status = ?",
+                        ('CHECK',)
+                    ).fetchone()
+                    if card_id != None:
+                        cursor.execute(
+                            "UPDATE managers SET id_card = ? WHERE id = ?",
+                            (card_id[0], user_id)
+                        )
+                        db.commit()
+                        del card_id
+                        await msg.answer('Формула удалена из БД')
+                        await manager_show_cur_card(msg)
+                    else:
+                        cursor.execute(
+                            "DELETE FROM managers WHERE id = ?",
+                            (user_id,)
+                        )
+                        await msg.answer(
+                            'Новые формулы закончились!\nАдмин-панель:',
+                            reply_markup=kbs.get_admin_keyboard()
+                        )
+                        db.commit()
+                    return                
+                if manager[3]:
+                    # если необходимо ввести путь формулы в БД
+                    cursor.execute(
+                        "UPDATE formuls SET path = ? WHERE id = ?",
+                        (msg.text, manager[1])
+                    )
+                    cursor.execute(
+                        "UPDATE managers SET input_path = ? WHERE id = ?",
+                        (False, user_id)
+                    )
+                    db.commit()
+                    await msg.answer('Путь успешно сохранен!')
+                    await manager_show_cur_card(msg)
+                    return
+                elif not manager[3] and not manager[5] and manager[2]:
+                    # если нажата кнопка выбора параметра
+                    buttons = [
+                        'name',
+                        'description',
+                        'link',
+                        'path'
+                    ]
+                    if msg.text in buttons:
+                        cursor.execute(
+                            "UPDATE managers SET input = ? WHERE id = ?",
+                            (True, user_id)
+                        )
+                        cursor.execute(
+                            "UPDATE managers SET input_name = ? WHERE id = ?",
+                            (msg.text, user_id)
+                        )
+                        db.commit()
+                        await msg.answer(
+                            f'Введите новый {msg.text}:'
+                        )
+                        return
+                    elif msg.text == '✔️Опубликовать✔️':
+                        cursor.execute(
+                            "UPDATE formuls SET status = ? WHERE id = ?",
+                            ('OK', manager[1])
+                        )
+                        cursor.execute(
+                            "UPDATE managers SET manage = ? WHERE id = ?",
+                            (False, user_id)
+                        )
+                        card_id = cursor.execute(
+                            "SELECT id FROM formuls WHERE status = ?",
+                            ('CHECK',)
+                        ).fetchone()
+                        if card_id != None:
+                            cursor.execute(
+                                "UPDATE managers SET id_card = ? WHERE id = ?",
+                                (card_id[0], user_id)
+                            )
+                            await manager_show_cur_card(msg)
+                        else:
+                            cursor.execute(
+                                "DELETE FROM managers WHERE id = ?",
+                                (user_id,)
+                            )
+                            await msg.answer(
+                                'Новые формулы закончились!\nАдмин-панель:',
+                                reply_markup=kbs.get_admin_keyboard()
+                            )
+                        db.commit()
+                        return
+                elif manager[5]:
+                    # если необходим ввод значения параметра
+                    cursor.execute(
+                        f"UPDATE formuls SET {manager[4]} = ? WHERE id = ?",
+                        (msg.text, manager[1])
+                    )
+                    cursor.execute(
+                        "UPDATE managers SET input_name = ? WHERE id = ?",
+                        ('', user_id)
+                    )
+                    cursor.execute(
+                        "UPDATE managers SET input = ? WHERE id = ?",
+                        (False, user_id)
+                    )
+                    db.commit()
+                    await manager_show_cur_card(msg)
+                    return
+                    
 
     if msg.text == 'Предложить формулу':
-        pass
+        return
     
     #? выбор формул
     keyboard = None # переменная под клавиатуру
