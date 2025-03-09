@@ -1,4 +1,8 @@
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
+import sqlite3
+
+db = sqlite3.connect('database.db')
+cursor = db.cursor()
 
 def get_keyboard(cats: list, go_to_main: bool = True) -> ReplyKeyboardMarkup:
     keyboard = []
@@ -13,11 +17,15 @@ def get_keyboard(cats: list, go_to_main: bool = True) -> ReplyKeyboardMarkup:
     )
 
 
-def get_start_keyboard(cats: list):
+def get_start_keyboard(
+        cats: list,
+        is_banned: bool = False
+    ) -> ReplyKeyboardMarkup:
     keyboard = []
     for cat in cats:
         keyboard.append([KeyboardButton(text=cat)])
-    keyboard.append([KeyboardButton(text='Предложить формулу')])
+    if not is_banned:
+        keyboard.append([KeyboardButton(text='Предложить формулу')])
 
     return ReplyKeyboardMarkup(
         keyboard=keyboard,
@@ -65,4 +73,10 @@ def get_card_edit_keyboard() -> ReplyKeyboardMarkup:
             ]
         ],
         resize_keyboard=True
+    )
+
+
+def get_null_keyboard() -> ReplyKeyboardMarkup:
+    return ReplyKeyboardMarkup(
+        keyboard=[]
     )

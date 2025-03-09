@@ -1,7 +1,7 @@
 from aiogram import Bot, Dispatcher, F
 # from aiogram.client.default import DefaultBotProperties
 from aiogram.filters import Command
-from aiogram.types import Message, FSInputFile
+from aiogram.types import Message, FSInputFile, ReplyKeyboardRemove
 import logging
 
 import asyncio
@@ -40,11 +40,10 @@ async def start_handler(msg: Message, first: bool = True):
     cursor.execute("SELECT * FROM users WHERE id = ?", (msg.from_user.id,))
     if cursor.fetchone() == None:
         # регистрация юзера в БД
-        cursor.execute("INSERT INTO users VALUES (?, ?, ?, ?, ?)", (
+        cursor.execute("INSERT INTO users VALUES (?, ?, ?, ?)", (
             msg.from_user.id,
             '',
             0,
-            False,
             False
             ))
         
@@ -55,6 +54,10 @@ async def start_handler(msg: Message, first: bool = True):
             ('', msg.from_user.id)
         )
     db.commit()
+    is_banned = cursor.execute(
+        "SELECT is_banned FROM users WHERE id = ?",
+        (msg.from_user.id,)
+    ).fetchone()[0]
     if first: # проверка на команду start
         await msg.answer(
 f'''
@@ -62,7 +65,7 @@ f'''
 Я помогу тебе найти нужные тебе формулы!
 Выбери нужную категорию из списка ниже:
 ''',
-        reply_markup=kbs.get_start_keyboard(get_categories(0))
+        reply_markup=kbs.get_start_keyboard(get_categories(0), is_banned)
         )
     else:
         text = '''
@@ -70,7 +73,7 @@ f'''
 '''
         await msg.answer(
             text, 
-            reply_markup=kbs.get_start_keyboard(get_categories(0))
+            reply_markup=kbs.get_start_keyboard(get_categories(0), is_banned)
         )
 
 
@@ -361,16 +364,17 @@ async def message_handler(msg: Message):
                     return                
                 if manager[3]:
                     # если необходимо ввести путь формулы в БД
-                    cursor.execute(
-                        "UPDATE formuls SET path = ? WHERE id = ?",
-                        (msg.text, manager[1])
-                    )
+                    if msg.text.lower() != 'отмена':
+                        cursor.execute(
+                            "UPDATE formuls SET path = ? WHERE id = ?",
+                            (msg.text, manager[1])
+                        )
+                        await msg.answer('Путь успешно сохранен!')
                     cursor.execute(
                         "UPDATE managers SET input_path = ? WHERE id = ?",
                         (False, user_id)
                     )
                     db.commit()
-                    await msg.answer('Путь успешно сохранен!')
                     await manager_show_cur_card(msg)
                     return
                 elif not manager[3] and not manager[5] and manager[2]:
@@ -444,8 +448,105 @@ async def message_handler(msg: Message):
                     return
                     
 
-    if msg.text == 'Предложить формулу':
-        return
+    creator = cursor.execute(
+        "SELECT input_text FROM creators WHERE id = ?",
+        (user_id,)
+    ).fetchone()
+    #? предложение новой формулы
+    # проверка на нахрждении в меню добавления
+    if creator == None:
+        if msg.text == 'Предложить формулу':
+            # заход в --//--
+            cursor.execute(
+                "INSERT INTO creators VALUES (?, ?, ?, ?, ?)",
+                (user_id, 'name', '', '', '')
+            )
+            db.commit()
+            await msg.answer(
+                'Введите название формулы ("отмена" для выхода):',
+                reply_markup=ReplyKeyboardRemove()
+            )
+            return
+    else:
+        if msg.text.lower() == 'отмена':
+            # если введена "отмена"
+            cursor.execute(
+                "DELETE FROM creators WHERE id = ?",
+                (user_id,)
+            )
+            db.commit()
+            await start_handler(msg, False)
+            return
+        if creator[0] == 'name':
+            # ввод имени формулы
+            cursor.execute(
+                "UPDATE creators SET formul_name = ? WHERE id = ?",
+                (msg.text, user_id)
+            )
+            cursor.execute(
+                "UPDATE creators SET input_text = ? WHERE id = ?",
+                ('description', user_id)
+            )
+            db.commit()
+            await msg.answer(
+                'Введите описание формулы ("нет" - пустое описание) \
+("отмена" для выхода):'
+            )
+            return
+        elif creator[0] == 'description':
+            # ввод описания
+            if msg.text.lower() != 'нет':
+                cursor.execute(
+                    "UPDATE creators SET formul_description = ? WHERE id = ?",
+                    (msg.text, user_id)
+                )
+            else:
+                cursor.execute(
+                    "UPDATE creators SET formul_description = ? WHERE id = ?",
+                    ('', user_id)
+                )
+            cursor.execute(
+                "UPDATE creators SET input_text = ? WHERE id = ?",
+                ('link', user_id)
+            )
+            db.commit()
+            await msg.answer(
+                'Введите ссылку на фото формулы ("отмена" для выхода):'
+            )
+            return
+        elif creator[0] == 'link':
+            # ввод ссылки на фото
+            cursor.execute(
+                "UPDATE creators SET formul_link = ? WHERE id = ?",
+                (msg.text, user_id)
+            )
+            db.commit()
+
+            # сохранение в БД
+            creator = cursor.execute(
+                "SELECT formul_name, formul_description, formul_link \
+FROM creators WHERE id = ?",
+                (user_id,)
+            ).fetchone()
+            cursor.execute(
+                "INSERT INTO formuls(path, name, description, link, status, \
+creater_id) VALUES (?, ?, ?, ?, ?, ?)",
+                ('', creator[0], creator[1], creator[2], 'CHECK', user_id)
+            )
+            cursor.execute(
+                "DELETE FROM creators WHERE id = ?",
+                (user_id,)
+            )
+            db.commit()
+
+            await msg.answer(
+                'Как только Ваша формула пройдет проверку, она будет \
+опубликована в соответствующей категории.'
+            )
+            await start_handler(msg, False)
+            download_photos_from_DB()
+            return
+
     
     #? выбор формул
     keyboard = None # переменная под клавиатуру
