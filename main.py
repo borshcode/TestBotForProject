@@ -199,7 +199,7 @@ async def message_handler(msg: Message):
         in_admin = cursor.execute(
             "SELECT in_admin FROM admins WHERE id = ?",
             (user_id,)
-        ).fetchone()
+        ).fetchone()[0]
         if in_admin:
             # если пользователь в админ-панели
             if msg.text == 'Выйти из панели':
@@ -565,14 +565,15 @@ creater_id) VALUES (?, ?, ?, ?, ?, ?)",
 
     categories = get_categories(level, new_path) # получение новых категорий
     if categories != 1:
-        keyboard = kbs.get_keyboard(categories) # запись клавиатуры
-        
-        # обновление пути в профиле пользователя ( БД )
-        cursor.execute(
-        "UPDATE users SET path = ? WHERE id = ?",
-        (new_path, user_id)
-        )
-        db.commit()
+        if msg.text in get_categories(level-1):
+            keyboard = kbs.get_keyboard(categories) # запись клавиатуры
+            
+            # обновление пути в профиле пользователя ( БД )
+            cursor.execute(
+            "UPDATE users SET path = ? WHERE id = ?",
+            (new_path, user_id)
+            )
+            db.commit()
     else:
         file = True
         # получение описания и ссылки из БД
