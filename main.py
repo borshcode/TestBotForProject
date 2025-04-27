@@ -8,7 +8,6 @@ import asyncio
 import os
 import sqlite3
 
-from myJson import Json
 from myDB import get_categories, create_tables, get_hash
 from downloadPhoto import *
 import config as cfg

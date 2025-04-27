@@ -3,8 +3,6 @@ import os
 import shutil
 import sqlite3
 
-from myJson import Json
-
 db = sqlite3.connect("database.db")
 cursor = db.cursor()
 
